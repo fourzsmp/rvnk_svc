@@ -1,0 +1,12 @@
+#!/bin/bash
+while read p; do
+  if grep -Fqi $p "/var/minecraft/plugins/PermissionsEx/permissions.yml"
+  then
+    echo "found in list: $p"
+  else
+    #/etc/init.d/minecraft command "broadcast $all"
+    sleep .1
+    echo "making resident: $p"
+    promote "$p"
+  fi
+done < /var/minecraft/white-list.txt

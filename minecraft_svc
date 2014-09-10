@@ -1,0 +1,537 @@
+#!/bin/bash
+# /etc/init.d/minecraft
+# version fourz_0.5.2 2014-08-31 (YYYY-MM-DD)
+
+### BEGIN INIT INFO
+# Provides:   minecraft
+# Required-Start: $local_fs $remote_fs
+# Required-Stop:  $local_fs $remote_fs
+# Should-Start:   $network
+# Should-Stop:    $network
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Short-Description:    Minecraft server
+# Description:    Starts the minecraft server
+### END INIT INFO
+
+#Settings
+#SERVICE="$2"
+OPTIONS='nogui'
+USERNAME='minecraft'
+WORLD='zothique'
+MAXHEAP=4096
+MINHEAP=4096
+HISTORY=1024
+CPU_COUNT=2
+
+MCPATH='/var/mcsnapshot/'
+MCHOME='/home/minecraft'
+BACKUPPATH='/home/minecraft/backups'
+REPOSITORY="/home/minecraft/instances"
+SYNCPATH="/home/minecraft/backups/offline_sync"
+SCRIPTS="/usr/local/bin"
+
+declare -a WORLDS=(zothique zothique_nether zothique_the_end)
+
+SERVICE="latest.jar"
+
+INVOCATION="java -Xmx${MAXHEAP}M -Xms${MINHEAP}M -XX:+UseConcMarkSweepGC \
+-XX:+UseParNewGC -XX:+DisableExplicitGC -jar $SERVICE $OPTIONS"
+
+ME=`whoami`
+as_user() {
+  if [ $ME == $USERNAME ] ; then
+    bash -c "$1"
+  else
+    sudo "$SCRIPTS/"mcrunas "$1"
+  fi
+}
+
+mc_start() {
+  if  pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "$SERVICE is already running!"
+  else
+    if [ -a "$MCPATH/update_temp.jar" ]; then
+      current_version=$(cat "$MCPATH/service_version")
+      revert_file="${MCPATH}/revert_${current_version}.jar"
+      cp "${MCPATH}/${SERVICE}" $revert_file
+      echo $revert_file > "$MCPATH/update_revert"
+      if [ $? -eq 0 ]; then 
+        mv "$MCPATH/update_temp.jar" "${MCPATH}/${SERVICE}"
+        if [ $? -eq 0 ]; then 
+          echo "Update successful!  Now running version $(cat ${MCPATH}/update_version)"
+          mv "$MCPATH/update_version" "$MCPATH/service_version"
+        else
+          echo "Update failed while applying update.  Please check your files."
+        fi        
+      else
+        echo "Update failed while creating revert jar.  Please check your files."
+      fi  
+    fi
+    echo "Starting $SERVICE..."
+    cd $MCPATH
+    as_user "cd $MCPATH && screen -h $HISTORY -dmS minecraft $INVOCATION"
+    sleep 7
+    if pgrep -u $USERNAME -f $SERVICE > /dev/null
+    then
+      echo "$SERVICE is now running."
+    else
+      echo "Error! Could not start $SERVICE!"
+    fi
+  fi
+}
+
+mc_saveoff() {
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "$SERVICE is running... suspending saves"
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"say SERVER BACKUP STARTING. Server going readonly...\"\015'"
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-off\"\015'"
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-all\"\015'"
+    sync
+    sleep 10
+  else
+    echo "$SERVICE is not running. Not suspending saves."
+  fi
+}
+
+mc_saveon() {
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "$SERVICE is running... re-enabling saves"
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-on\"\015'"
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"say SERVER BACKUP ENDED. Server going read-write...\"\015'"
+  else
+    echo "$SERVICE is not running. Not resuming saves."
+  fi
+}
+
+mc_stop() {
+  mc_port disable
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    if [ "$1" = "force" ]; then
+      read -p "Are you sure you want to do this?  Files could be corrupted if still being written to. (y/n)" -n 1 -r
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        pid=$(pidof java)
+        if [ $(echo "$pid" | wc -l) -eq "1" ]; then
+          kill -9 $pid
+        else          
+          for item in "${!pid[@]}"
+          do
+            kill -9 "$item=>${pid[item]}"
+          done
+        fi
+      fi
+      return 0
+    else      
+      echo "Stopping $SERVICE"
+      as_user "screen -p 0 -S minecraft -X eval 'stuff \"say SERVER SHUTTING DOWN IN 10 SECONDS. Saving map...\"\015'"
+      as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-all\"\015'"
+      sleep 10
+      as_user "screen -p 0 -S minecraft -X eval 'stuff \"stop\"\015'"
+      sleep 7
+    fi  
+  else
+    echo "$SERVICE was not running."
+  fi
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    echo "Error! $SERVICE could not be stopped."
+  else
+    echo "$SERVICE is stopped."
+  fi
+  mc_port enable
+}
+
+mc_regenerate() {
+  wo=$1
+  loc=
+  case $wo in
+    theend)
+      loc="$MCPATH/$WORLD/DIM1/"    
+      echo "resetting The End"
+    ;;  
+    *)    
+      echo "invalid world: $wo"
+    ;;
+  esac  
+  echo "$loc$1"
+  cp "$loc" "$BACKUPPATH/resets/" -r
+  rm "$loc" -R
+}
+
+mc_update() {
+  jars="$MCHOME/jars"
+  update_file=
+  version=
+  type=$1
+  match=$2  
+  case "$type" in
+    snapshot)      
+      jars=$(curl https://mojang.com 2>&1 | grep -o -E 'href="([^"#]+).jar"' | cut -d'"' -f2)
+      #echo "$jars"
+      if [ "$match" = "latest" ]; then
+        update_file=$(echo "$jars" | head -n 1 )           
+        version=`expr "$update_file" : '^.*\.\(.*\)\.jar$'`        
+        echo "found most recent snapshot: $update_file"
+      else
+        result=$(echo "$jars" | grep --color=never $match)
+        if [ $(echo "$result" | wc -l) -eq "1" ]; then
+          update_file=$result
+          version=`expr "$update_file" : '^.*\.\(.*\)\.jar$'`        
+          echo "matched $update_file."
+        else
+          echo "too many matches.  please be more specific"
+        fi        
+      fi        
+    ;;
+    release)
+    ;;
+    bukkit)
+      OLDIFS="$IFS"; IFS=$'\n'
+      lines=$(curl https://dl.bukkit.org/downloads/craftbukkit/ 2>&1 | grep -E 'href="([^"#]+).jar"')
+      jars=$(echo "$lines" | cut -d'"' -f6)      
+      descs=$(echo "$lines" | cut -d'"' -f4)
+      read -a ajars <<< $jars
+      read -a adescs <<< $descs
+      
+      echo ${#ajars[@]}
+      echo ${#ajars[@]}
+      
+      for i in ${arr[@]}; do echo $i; done
+      
+      IFS=$"OLDIFS"
+      if [ "$match" = "latest" ]; then
+        update_file=$(echo "$jars" | head -n 1 )           
+        desc=$(echo "$descs" | head -n 1)
+        version=$(echo ${desc/Download /})
+        echo "found most recent version: $update_file"
+      else
+        result=$(echo "$jars" | grep --color=never $match)
+        if [ $(echo "$result" | wc -l) -eq "1" ]; then
+          update_file=$result
+          version=`expr "$update_file" : '^.*\.\(.*\)\.jar$'`        
+          echo "matched $update_file."
+        else
+          echo "too many matches.  please be more specific"
+        fi        
+      fi            
+    ;;
+    spigot)
+    ;;    
+  esac
+  if [[ -n $update_file ]]; then  
+    if [ -z $version ]; then  
+      read -p "Unable to capture version.  Please input: " -r
+      version=$REPLY
+    fi        
+    version="$type$version"
+    echo $version
+    read -p "Download this file? (y/n)" -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "$version" > "$MCPATH/update_version"
+      wget -O "$MCPATH/update_temp.jar" "$update_file"
+      if [ $? -ne 0 ]; then 
+        echo "download failed"
+        rm "$MCPATH/update_temp.jar"
+        exit 1
+      fi      
+      echo "performing backup."  
+      mc_backup quick
+      echo "backup complete.  "
+      read -p "Would you like to restart the server? Use 'w' to warn on a 5 minute timer. (y/n/w)" -n 1 -r
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        mc_restart
+      elif [[ $REPLY =~ ^[Ww]$ ]]; then  
+        restart_timer 5
+        #mc_restart
+      fi      
+    fi
+  fi  
+}
+
+mc_backup() {
+  NOW=`date "+%y%m%d-%H%M"`
+    
+  command=$1
+  type=$2
+  option=$3  
+  echo "$command/$type/$option"
+  
+  if [ -z "$type" ]; then type="quick"; fi
+   
+  case "$type" in
+    world)
+      if [ -z "$option" ]; then 
+        echo "Usage: $0 backup world {world}"
+        exit 1
+      fi
+      if [ -d "$MCPATH/$option" ]; then
+        echo "backing up world: $option"
+        /usr/local/bin/mcx "say [AUTO] backing up world: $option"
+        /usr/local/bin/mcx save-all
+        /usr/local/bin/mcx save-off
+        #rsync -vr "$MCPATH/$option/" "$SYNCPATH/$option"
+        cp "$MCPATH/$option/" "$SYNCPATH/" -rf >> /home/minecraft/backup.log
+        /usr/local/bin/mcx "backup complete!"
+        /usr/local/bin/mcx save-on
+      else
+        echo "World, $option does not exist"
+      fi
+      ;;    
+    quick | archive )      
+      if [ "$type" = "quick" ]; then
+        BACKUP_FILE="${BACKUPPATH}/${WORLD}_quick.zip"  
+      else
+        BACKUP_FILE="${BACKUPPATH}/${WORLD}_${NOW}.zip"      
+      fi
+      echo $BACKUP_FILE
+      if [ -d "$BACKUPPATH" ]; then
+        echo "backing up all server files"
+        /usr/local/bin/mcx "say [AUTO] backing up all server files"
+        /usr/local/bin/mcx save-all
+        /usr/local/bin/mcx save-off        
+        #result=$(touch $BACKUP_FILE )
+        nice zip -rq9 $BACKUP_FILE $MCPATH
+        /usr/local/bin/mcx "backup complete!"
+        /usr/local/bin/mcx save-on
+      else
+        echo "$BACKUPPATH does not exist"
+      fi      
+      ;;
+    plugins)
+      echo "backing up server plugins"
+      /usr/local/bin/mcx "say [AUTO] backing up server plugins"
+      /usr/local/bin/mcx save-all
+      /usr/local/bin/mcx save-off
+      cp "$MCPATH/plugins/" "$SYNCPATH/" -rf >> /home/minecraft/backup.log
+      /usr/local/bin/mcx save-on
+      ;;
+    inventories)
+      echo "backing up server plugins"
+      /usr/local/bin/mcx "say [AUTO] backing up player inventories"
+      /usr/local/bin/mcx save-all
+      /usr/local/bin/mcx save-off
+      cp "$MCPATH/world/players/" "$SYNCPATH/world/" -rf >> /home/minecraft/backup.log
+      /usr/local/bin/mcx save-on
+      ;;
+    sync)
+      if [ -z "$option" ]; then 
+        echo "syncronizing $SYNCPATH to dev.fourz.org"
+        echo "$SYNCPATH/ wizard@dev.fourz.org:$SYNCPATH"
+        rsync -rza --delete "$SYNCPATH/" wizard@dev.fourz.org:"$SYNCPATH"
+      else
+        if [ -d "$SYNCPATH/$option" ]; then
+          echo "syncronizing $SYNCPATH/$option to dev.fourz.org"
+          rsync -rza --delete "$SYNCPATH/$option" wizard@dev.fourz.org:"$SYNCPATH/$option"
+        fi
+      fi    
+      ;;
+    
+    *) 
+      echo $type
+      echo "Usage: $0 {world|server|plugins|sync} (subdir)"
+      ;;
+  esac    
+}
+
+mc_command_wait() {
+  local command=$(escape_stuff "$1");
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    pre_log_len=`wc -l "$MCPATH/logs/latest.log" | awk '{print $1}'`
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"$command\"\015'"
+    sleep 3 # assumes that the command will run and print to the log file in less than 3 seconds
+    # print output
+    tail -n $[`wc -l "$MCPATH/logs/latest.log" | awk '{print $1}'`-$pre_log_len] "$MCPATH/logs/latest.log"
+  fi
+}
+
+mc_command() {
+  local command=$(escape_stuff "$1");  
+  if pgrep -u $USERNAME -f $SERVICE > /dev/null
+  then
+    pre_log_len=`wc -l "$MCPATH/logs/latest.log" | awk '{print $1}'`
+    as_user "screen -p 0 -S minecraft -X eval 'stuff \"$command\"\015'"
+    sleep .1 # assumes that the command will run and print to the log file in less than .1 seconds
+    # print output
+    tail -n $[`wc -l "$MCPATH/logs/latest.log" | awk '{print $1}'`-$pre_log_len] "$MCPATH/logs/latest.log"
+  fi
+}
+
+mc_test() {
+  param=$1
+  echo $(trim_log_data "[16:38:04] [Server thread/INFO]: There are 0/25 players online:")
+}
+
+mc_restart() {
+  mc_kickall "$1"
+  sleep 1
+  mc_stop
+  sleep 3
+  mc_start
+}
+mc_port() {
+  sudo /usr/local/bin/mcport $1
+}
+
+escape_stuff() {
+  echo ${1//\'/\\047}
+  #echo "$1"
+}
+
+trim_log_data() {
+  re='^\[.*\]: (.*)$'  
+  [[ $1 =~ $re ]]  
+  t="${BASH_REMATCH[1]}"
+  echo $t    
+}
+
+get_log_data() {
+  re='^\[(.*\)] \[(.*\)]: (.*)$'  
+  [[ $1 =~ $re ]]
+  p0="{$BASH_REMATCH[0]}"
+  if [ "$p0" = false ]; then
+    echo "false"
+  else
+    echo $p0
+  fi
+  p1="${BASH_REMATCH[1]}"
+  p2="${BASH_REMATCH[2]}"
+  p3="${BASH_REMATCH[3]}"
+  echo $p3
+}
+
+mc_kickall() {  
+  reason="$1"
+  i=0
+  found=-1
+  online=-1  
+  OLDIFS=$IFS    
+  re='^There are ([0-9]+)\/.* players online:$'
+  while [ $online -ne 0 ];do    
+    list=$(mc_command "list")    
+    IFS=$'\n'
+    output=()
+    for item in $list
+    do    
+      ((i++))
+      output[$i]=$(trim_log_data "$item")
+      if [[ $i -eq $found+1 ]]; then      
+        IFS=", "
+        players=$(echo ${output[$i]})      
+      fi      
+      if [[ ${output[$i]} =~ $re ]]; then
+        online=${BASH_REMATCH[1]}
+        found=$i
+      fi
+    done
+    IFS=$OLDIFS
+    for p in $players
+    do
+      echo $p
+      sleep .1
+      mc_command "kick $p $reason"
+    done    
+    if [ $i -gt 30 ]; then
+      break;
+    fi    
+  done  
+}
+
+function stripcolor() {
+  printf "$result" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+}
+
+#Start-Stop here
+case "$1" in
+  start)
+    mc_start
+    ;;
+  stop)
+    if [[ -z $2 ]]; then
+      mc_kickall "Server is stopping. Generic Reason"
+    else
+      mc_kickall "Server is stopping. Reason: $2"
+    fi    
+    mc_stop     
+    ;;
+  kickall)    
+    mc_kickall "Kickall Executing: $2"
+    ;;
+  command)
+    if [ "$2" == "stop" ]; then
+      echo "cannot pass stop command into console.  use '$0 stop' instead."
+    else        
+      if [ $# -gt 1 ]; then
+        shift
+        mc_command "$*"
+      else
+        echo "Must specify server command (try 'help'?)"
+      fi
+    fi  
+    ;;
+  command_wait)
+    if [ "$2" == "stop"]; then
+      echo "cannot pass stop command into console.  use '$0 stop' instead."
+      exit 1
+    else
+      if [ $# -gt 1 ]; then
+        shift
+        mc_command_wait "$*"
+      else
+        echo "Must specify server command (try 'help'?)"
+      fi
+    fi  
+    ;;    
+  forcestop)
+    mc_stop "force"  
+    ;;
+  regen)    
+    mc_kickall "Server is restarting to regenerate world: $2"    
+    mc_stop
+    mc_regenerate $2 
+    sleep 2
+    mc_start
+    ;;
+  restart)
+    if [[ -z $2 ]]; then
+      mc_restart "Server is restarting -- Please reconnect in 1 minute."    
+    else
+      mc_restart "Server is restarting. Reason: $2"
+    fi
+    ;;
+  forcerestart)
+    echo "padding with five second delay"
+    sleep 5
+    mc_stop "force"
+    sleep 3
+    mc_start
+    ;;  
+  test)
+    mc_test
+    ;;  
+  update)        
+    mc_update $2 $3    
+    ;;
+  backup)
+    mc_backup $1 $2 $3
+    ;;
+  status)
+    if pgrep -u $USERNAME -f $SERVICE > /dev/null
+    then
+      echo "$SERVICE is running."
+    else
+      echo "$SERVICE is not running."
+    fi
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|update|backup|status|restart|forcerestart|command|kickall \"server command\"}"
+  exit 1
+  ;;
+esac
+
+exit 0

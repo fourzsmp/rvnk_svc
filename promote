@@ -1,0 +1,25 @@
+#!/bin/bash
+mcx "whitelist add $1"
+if [ -z "$2" ]; then
+  mcx "pex user $1 group set resident"
+  fay ca "$1 has been promoted to resident!" gold
+else
+  if [[ "$2" = "resident" ||
+        "$2" = "member" ||
+        "$2" = "worker" ||
+        "$2" = "trusted" ||
+        "$2" = "creator" ||
+        "$2" = "leader" ||
+        "$2" = "moderator" ||
+        "$2" = "contributor" ||
+        "$2" = "donator" ||
+        "$2" = "supporter" ||
+        "$2" = "grunt" ||
+        "$2" = "knight" ||
+        "$2" = "warlord" ]]; then
+    mcx "pex user $1 group set $2"    
+    fay ca "$1 has been promoted to $2!" gold
+  else 
+    echo "rank $2 not recognized"
+  fi
+fi

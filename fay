@@ -1,0 +1,43 @@
+#!/bin/bash
+# /usr/local/bin/fay
+case $1 in
+  a)    
+    cmd="tellraw @a '$2'"    
+    ;;  
+  b)
+    cmd="tellraw @a [{text:'$2',color:dark_green}]"
+    ;;    
+  p)
+    cmd="tellraw $2 '$3'"    
+    ;;
+  ca)    
+    cmd="tellraw @a [{text:'$2',color:$3}]"
+    ;;  
+  ua)    
+    cmd="tellraw @a {text:'',extra:[{'text':'$2','color':'blue','underlined':'true','clickEvent':{'action':'open_url','value':'$3'}}]}"               
+    ;;
+  uabb)
+    re='^(.*)\[url=(.*)\](.*)\[\/url\](.*)$'
+      if [[ "$2" =~ $re ]]; then
+         pre=${BASH_REMATCH[1]}
+         link=${BASH_REMATCH[2]}
+         text=${BASH_REMATCH[3]}
+         post=${BASH_REMATCH[4]}
+        cmd="tellraw @a {text:'',extra:[{'text':'$pre' },{'text':'$text','color':'blue','underlined':'true','clickEvent':{'action':'open_url','value':'$link'}},{'text':'$post'}]}"
+      else
+        echo "Usage: $0 uabb \"pre[url=link]linktext[url]post\"" 
+        exit 1      
+      fi      
+    ;;    
+  ta)
+    cmd="title @a title {'text':'','extra':[{'text':'$2','color':'$3'}]}"
+    ;;
+  *)
+    echo "Usage: $0 {a|b|p|ca|ua|uabb|t} \"message\" [data]"    
+    exit 1
+    
+esac
+#echo "$cmd"
+/etc/init.d/minecraft command $cmd
+
+exit 0

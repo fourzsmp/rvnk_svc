@@ -1,0 +1,5 @@
+#!/bin/bash
+for i in "$@"; do
+  all="$all$i "
+done
+/etc/init.d/minecraft command_wait "$all"

@@ -1,0 +1,91 @@
+#!/bin/bash
+ 
+cleanup()
+{
+  return $?
+}
+ 
+control_c()
+  # run if user hits control-c{
+  echo "cancelling restart"
+  fay ca "Cancelling Restart Timer" red
+  cleanup
+  exit $?
+}
+cond_restart()
+{
+  case $1 in
+    test)
+      fay ca "Server NOT restarting.  Carry on..." green
+      ;;
+    norestart)
+      echo "not restarting within this script"
+      ;;    
+    *)
+      /etc/init.d/minecraft restart      
+      ;;
+  esac
+}
+ 
+# trap keyboard interrupt (control-c)
+trap control_c SIGINT
+
+TIMER=$1
+OPT=$2
+case $OPT in
+  test)
+    tsay="TEST RUN - SERVER NOT RESTARTING"
+    ;;
+  *)
+esac
+  
+case $TIMER in
+  10)
+    fay ca "$tsay" red    
+    fay ca "server restarting in 10 minutes." red
+    sleep 5m
+    fay ca "$tsay" red
+    fay ca "server restarting in 5 minutes." red
+    sleep 4m
+    fay ca "$tsay" red
+    fay ca "server restarting in 1 minute." red
+    fay ta "server restarting in 1 minute" red
+    sleep 1m
+    cond_restart $OPT   
+  ;;
+  5)
+    fay ca "$tsay" red
+    fay ca "server restarting in 5 minutes." red
+    sleep 2m
+    fay ca "$tsay" red
+    fay ca "server restarting in 3 minutes." red
+    sleep 2m    
+    fay ca "$tsay" red
+    fay ca "server restarting in 1 minute." red
+    fay ta "server restarting in 1 minute" red
+    sleep 1m
+    cond_restart $OPT
+  ;;
+  3)
+    fay ca "$tsay" red
+    fay ca "server restarting in 3 minutes." red
+    sleep 2m    
+    fay ca "$tsay" red
+    fay ca "server restarting in 1 minute." red
+    fay ta "server restarting in 1 minute" red
+    sleep 1m
+    cond_restart $OPT
+  ;;
+  1)
+    fay ca "$tsay" red
+    fay ca "server restarting in 1 minute." red
+    fay ta "server restarting in 1 minute" red
+    sleep 1m
+    cond_restart $OPT
+  ;;
+  *)
+  echo "Usage: $0 {10|5|3|1} [TEST]"
+  ;;
+esac
+
+exit 1

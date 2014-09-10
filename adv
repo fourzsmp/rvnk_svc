@@ -1,0 +1,78 @@
+#!/bin/bash
+
+DATPATH="$(dirname $0)/advdata"
+cd "$DATPATH"
+
+get_ads() {
+    OLDIFS=$IFS
+    IFS=$'\r\n' 
+    adv=($(cat $DATPATH/adv.text))
+    IFS=$OLDIFS    
+    UBOUND=${#adv[@]}
+}
+
+change_console_prefix() {
+  if [ "$1" = "restore" ]; then    
+    eval "sed -i 's/^ \+console-say-format:.*$/        console-say-format: <\`b\\*Console\`w> %s/' /var/minecraft/plugins/CommandBook/config.yml"
+  else    
+    eval "sed -i 's/^ \+console-say-format:.*$/        console-say-format: $1 %s/' /var/minecraft/plugins/CommandBook/config.yml"
+    #        console-say-format: <`b\*Console`w> %s
+    #egrep '^ +console-say-format:.*$' /var/minecraft/plugins/CommandBook/config.yml            
+  fi
+}
+case "$1" in
+  announce)
+    get_ads    
+    CURRENT=$(cat $DATPATH/adv.last)
+
+    #say "[AD] ${adv[$CURRENT]}"    
+    re='\[url='
+    if [[ "${adv[$CURRENT]}" =~ $re ]]; then
+      ../fay uabb "[AD] ${adv[$CURRENT]}"
+    else
+      ../fay a "[AD] ${adv[$CURRENT]}"
+    fi
+        
+    #echo "$CURRENT / $UBOUND" 
+    ((CURRENT++))
+    if [ "$CURRENT" -ge "$UBOUND" ]; then
+      CURRENT=0
+    fi
+    #echo "$CURRENT / $UBOUND"
+    echo $CURRENT > "$DATPATH/adv.last"
+    ;;
+  list)   
+    get_ads
+    index=0 
+    while [ "$index" -lt "$UBOUND" ]; do
+      echo -e "$[$index+1]\t${adv[$index]}"
+      ((index++))
+    done  
+    ;;
+  add)
+    echo -e "\r\n$2" >> "$DATPATH/adv.text"
+    ;;
+  remove)
+    get_ads
+    index="$[$2-1]"
+    if [ "$index" -lt "$UBOUND" ]; then
+      echo "${adv[$index]}" >> "$DATPATH/adv.archive"
+      echo "removing: ${adv[$index]}"
+      ((index++))
+      eval "sed -i '${index} d' $DATPATH/adv.text"
+    else
+      echo "index out or range"
+    fi 
+    ;;
+  shuffle)       
+    cat "$DATPATH/adv.text" | sort --random-sort > "$DATPATH/adv.temp"
+    mv "$DATPATH/adv.temp" "$DATPATH/adv.text"
+    ;;
+  console)
+    change_console_prefix "$2"
+    ;;
+  *)
+  echo "Usage: $0 {announce|list|shuffle|add \"text\" |remove \"index\"}"
+  exit 1
+  ;;
+esac

@@ -1,0 +1,2 @@
+#! /bin/sh
+tail -F -n 80 /var/mcsnapshot/logs/latest.log | sed -e 's/Server thread\///'

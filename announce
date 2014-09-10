@@ -1,0 +1,8 @@
+#!/bin/bash
+for i in "$@"; do
+  #i={i//"/\"}
+  #i={i//"/\"}
+  all="$all$i "
+done
+/etc/init.d/minecraft command "broadcast $all"
+twidge update "$all"

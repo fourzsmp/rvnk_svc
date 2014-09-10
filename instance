@@ -1,0 +1,94 @@
+#!/bin/bash
+
+function stripcolor() {
+  printf "$result" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+}
+
+function importworld() {
+  result=$(mcwx mv import "$name" normal)
+  result=$(stripcolor)
+  #is the world already loaded?
+  if [ `expr "$result" : '.*Multiverse already knows about'` -ne 0 ]; then
+    printf "exists"
+  elif [ `expr "$result" : '.*CONSOLE: Complete!'` -ne 0 ]; then
+    printf "success"
+  elif [ `expr "$result" : '.*That world folder does not exist.'` -ne 0 ]; then
+    printf "missing"
+  else
+    echo "$result"
+  fi
+}
+
+action=$1
+name=$2
+options=$3
+
+if [ "$name" = "plugins" ] || [ "$name" = "world" ] || [ "$name" = "world_nether" ] || [ "$name" = "world_the_end" ] || [ "$name" = "rohal" ]; then
+  echo "world cannot be \"$name\""
+  exit 1
+fi
+
+repository="/home/minecraft/instances"
+backuppath="/home/minecraft/backups"
+mcpath="/var/minecraft"
+
+case "$1" in
+  create)
+    echo "creating instance for world: $name"
+    importresult=$(importworld)    
+    case "$importresult" in
+      exists)
+        echo "World already exists, exiting." 
+        exit 1
+        ;;
+      success)
+        echo "World successfully reloaded"    
+        ;;
+      missing)
+        echo "World directory not found.  Attempting to load from instancing repository."
+        if [ -d "$repository/$name" ]; then
+          echo "Repository found! Copying world folder."
+
+          #copy from respository. if error, exit
+          cperr=$((cp -r "$repository/$name/" "$mcpath") 2>&1)
+          if [ "$?" -ne "0" ]; then
+            echo "Error while copying: $cperr"
+            #cleanup failed copy
+            rm -r "$mcpath/$name/"
+            exit 1 
+          fi
+
+          #todo: error trapping on fresh import
+          result=$(mcwx mv import "$name" normal)
+          result=$(stripcolor)
+          echo "$result"  
+        else
+          echo "World not found in repository, exiting."
+          exit 1
+        fi
+        ;;
+      *)
+        echo "Unknown Error Occurred: $importresult"
+        ;;
+    esac
+    ;;
+  destroy)    
+    ;;
+  reset)
+    echo "test"
+    ;;
+  update)
+    #push changes back to the repository  
+    ;;
+  backup)
+    #backup to backup folder for later use
+    ;;
+  restore)
+    #restore backup
+    ;;
+  *) 
+    echo "Usage: $0 {create|unload|destroy|reset|update|backup|restore} [world] (option)"
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,123 @@
+./mcx dmarker deleteset Regions
+./mcx dmarker addset Regions hide:true
+./mcx dmarker addcorner -0 64 0 world
+./mcx dmarker addcorner -0 64 512 world
+./mcx dmarker addcorner 512 64 512 world
+./mcx dmarker addline id:regl1 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl1 r.0.0.mcr set:Regions icon:comment x:256 y:64 z:256 world:world
+./mcx dmarker addcorner -0 64 512 world
+./mcx dmarker addcorner -0 64 1024 world
+./mcx dmarker addcorner 512 64 1024 world
+./mcx dmarker addline id:regl2 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl2 r.0.1.mcr set:Regions icon:comment x:256 y:64 z:768 world:world
+./mcx dmarker addcorner 512 64 -10240 world
+./mcx dmarker addcorner 512 64 -9728 world
+./mcx dmarker addcorner 1024 64 -9728 world
+./mcx dmarker addline id:regl3 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl3 r.1.-20.mcr set:Regions icon:comment x:768 y:64 z:-9984 world:world
+./mcx dmarker addcorner 512 64 -9728 world
+./mcx dmarker addcorner 512 64 -9216 world
+./mcx dmarker addcorner 1024 64 -9216 world
+./mcx dmarker addline id:regl4 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl4 r.1.-19.mcr set:Regions icon:comment x:768 y:64 z:-9472 world:world
+./mcx dmarker addcorner 512 64 -9216 world
+./mcx dmarker addcorner 512 64 -8704 world
+./mcx dmarker addcorner 1024 64 -8704 world
+./mcx dmarker addline id:regl5 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl5 r.1.-18.mcr set:Regions icon:comment x:768 y:64 z:-8960 world:world
+./mcx dmarker addcorner 512 64 -8704 world
+./mcx dmarker addcorner 512 64 -8192 world
+./mcx dmarker addcorner 1024 64 -8192 world
+./mcx dmarker addline id:regl6 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl6 r.1.-17.mcr set:Regions icon:comment x:768 y:64 z:-8448 world:world
+./mcx dmarker addcorner 512 64 -8192 world
+./mcx dmarker addcorner 512 64 -7680 world
+./mcx dmarker addcorner 1024 64 -7680 world
+./mcx dmarker addline id:regl7 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl7 r.1.-16.mcr set:Regions icon:comment x:768 y:64 z:-7936 world:world
+./mcx dmarker addcorner 512 64 -7680 world
+./mcx dmarker addcorner 512 64 -7168 world
+./mcx dmarker addcorner 1024 64 -7168 world
+./mcx dmarker addline id:regl8 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl8 r.1.-15.mcr set:Regions icon:comment x:768 y:64 z:-7424 world:world
+./mcx dmarker addcorner 512 64 -7168 world
+./mcx dmarker addcorner 512 64 -6656 world
+./mcx dmarker addcorner 1024 64 -6656 world
+./mcx dmarker addline id:regl9 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl9 r.1.-14.mcr set:Regions icon:comment x:768 y:64 z:-6912 world:world
+./mcx dmarker addcorner 512 64 -6656 world
+./mcx dmarker addcorner 512 64 -6144 world
+./mcx dmarker addcorner 1024 64 -6144 world
+./mcx dmarker addline id:regl10 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl10 r.1.-13.mcr set:Regions icon:comment x:768 y:64 z:-6400 world:world
+./mcx dmarker addcorner 512 64 -6144 world
+./mcx dmarker addcorner 512 64 -5632 world
+./mcx dmarker addcorner 1024 64 -5632 world
+./mcx dmarker addline id:regl11 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl11 r.1.-12.mcr set:Regions icon:comment x:768 y:64 z:-5888 world:world
+./mcx dmarker addcorner 512 64 -5632 world
+./mcx dmarker addcorner 512 64 -5120 world
+./mcx dmarker addcorner 1024 64 -5120 world
+./mcx dmarker addline id:regl12 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl12 r.1.-11.mcr set:Regions icon:comment x:768 y:64 z:-5376 world:world
+./mcx dmarker addcorner 512 64 -5120 world
+./mcx dmarker addcorner 512 64 -4608 world
+./mcx dmarker addcorner 1024 64 -4608 world
+./mcx dmarker addline id:regl13 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl13 r.1.-10.mcr set:Regions icon:comment x:768 y:64 z:-4864 world:world
+./mcx dmarker addcorner 512 64 -4608 world
+./mcx dmarker addcorner 512 64 -4096 world
+./mcx dmarker addcorner 1024 64 -4096 world
+./mcx dmarker addline id:regl14 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl14 r.1.-9.mcr set:Regions icon:comment x:768 y:64 z:-4352 world:world
+./mcx dmarker addcorner 512 64 -4096 world
+./mcx dmarker addcorner 512 64 -3584 world
+./mcx dmarker addcorner 1024 64 -3584 world
+./mcx dmarker addline id:regl15 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl15 r.1.-8.mcr set:Regions icon:comment x:768 y:64 z:-3840 world:world
+./mcx dmarker addcorner 512 64 -3584 world
+./mcx dmarker addcorner 512 64 -3072 world
+./mcx dmarker addcorner 1024 64 -3072 world
+./mcx dmarker addline id:regl16 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl16 r.1.-7.mcr set:Regions icon:comment x:768 y:64 z:-3328 world:world
+./mcx dmarker addcorner 512 64 -3072 world
+./mcx dmarker addcorner 512 64 -2560 world
+./mcx dmarker addcorner 1024 64 -2560 world
+./mcx dmarker addline id:regl17 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl17 r.1.-6.mcr set:Regions icon:comment x:768 y:64 z:-2816 world:world
+./mcx dmarker addcorner 512 64 -2560 world
+./mcx dmarker addcorner 512 64 -2048 world
+./mcx dmarker addcorner 1024 64 -2048 world
+./mcx dmarker addline id:regl18 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl18 r.1.-5.mcr set:Regions icon:comment x:768 y:64 z:-2304 world:world
+./mcx dmarker addcorner 512 64 -2048 world
+./mcx dmarker addcorner 512 64 -1536 world
+./mcx dmarker addcorner 1024 64 -1536 world
+./mcx dmarker addline id:regl19 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl19 r.1.-4.mcr set:Regions icon:comment x:768 y:64 z:-1792 world:world
+./mcx dmarker addcorner 512 64 -1536 world
+./mcx dmarker addcorner 512 64 -1024 world
+./mcx dmarker addcorner 1024 64 -1024 world
+./mcx dmarker addline id:regl20 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl20 r.1.-3.mcr set:Regions icon:comment x:768 y:64 z:-1280 world:world
+./mcx dmarker addcorner 512 64 -1024 world
+./mcx dmarker addcorner 512 64 -512 world
+./mcx dmarker addcorner 1024 64 -512 world
+./mcx dmarker addline id:regl21 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl21 r.1.-2.mcr set:Regions icon:comment x:768 y:64 z:-768 world:world
+./mcx dmarker addcorner 512 64 -512 world
+./mcx dmarker addcorner 512 64 0 world
+./mcx dmarker addcorner 1024 64 0 world
+./mcx dmarker addline id:regl22 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl22 r.1.-1.mcr set:Regions icon:comment x:768 y:64 z:-256 world:world
+./mcx dmarker addcorner 512 64 0 world
+./mcx dmarker addcorner 512 64 512 world
+./mcx dmarker addcorner 1024 64 512 world
+./mcx dmarker addline id:regl23 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl23 r.1.0.mcr set:Regions icon:comment x:768 y:64 z:256 world:world
+./mcx dmarker addcorner 512 64 512 world
+./mcx dmarker addcorner 512 64 1024 world
+./mcx dmarker addcorner 1024 64 1024 world
+./mcx dmarker addline id:regl24 set:Regions weight:0 color:FFFFFF
+./mcx dmarker add id:regl24 r.1.1.mcr set:Regions icon:comment x:768 y:64 z:768 world:world
+done

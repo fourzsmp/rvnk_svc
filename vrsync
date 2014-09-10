@@ -1,0 +1,14 @@
+#!/bin/bash
+
+case "$1" in
+  enable)
+    cp /home/wizard/.ssh/validate-rsync_bypass /home/wizard/.ssh/validate-rsync
+    ;;
+  disable)
+    cp /home/wizard/.ssh/validate-rsync_copy /home/wizard/.ssh/validate-rsync
+    ;;
+  *)
+    echo "Usage: $0 {enable|disable}"
+esac
+
+exit 0

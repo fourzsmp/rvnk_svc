@@ -1,0 +1,4 @@
+#! /bin/sh
+TIMER=$1
+REASON=$2
+restart_timer $TIMER > /dev/null 2>&1 &

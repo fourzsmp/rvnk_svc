@@ -1,0 +1,8 @@
+#!/bin/bash
+say 3
+sleep 1
+say 2
+sleep 1
+say 1
+sleep 1
+say GO!

@@ -1,0 +1,31 @@
+#! /bin/sh
+
+xs=-10240
+xe=10240
+ys=-10240
+ye=10240
+
+x=$xs
+y=$ys
+i=0
+
+mcx dmarker deleteset Regions
+mcx dmarker addset Regions hide:true
+
+while [ "$x" -le $xe ]
+do  
+  while [ "$y" -le $ye ]
+  do
+    i=$((i+1))
+    mcx "dmarker addcorner $x 64 $y world"
+    mcx "dmarker addcorner $x 64 $(($y+512)) world"
+    mcx "dmarker addcorner $(($x+512)) 64 $(($y+512)) world"
+    mcx "dmarker addline id:regl$i set:Regions weight:1 color:FFFFFF"
+    mcx "dmarker add id:regl$i r.$(($x/512)).$(($y/512)).mcr set:Regions icon:comment x:$(($x+256)) y:64 z:$(($y+256)) world:world"
+    y=$(($y+512))
+  done
+  x=$(($x+512))
+  y=$ys
+done
+
+echo "done"

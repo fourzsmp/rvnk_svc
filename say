@@ -1,0 +1,14 @@
+#!/bin/bash
+for i in "$@"; do
+  all="$all$i "
+done
+ME=`whoami`
+COL="green"
+[[ "$ME" == "rottorz" ]] && COL="dark_purple"
+[[ "$ME" == "ryanphantom" ]] &&  COL="aqua"
+
+CMD="tellraw @a {'text':'','extra':[{'text':'['},{'text':'$ME@console','color':'$COL'},{'text':'] $all'}]}"
+/etc/init.d/minecraft command "$CMD"
+
+
+

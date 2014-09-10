@@ -1,0 +1,8 @@
+#!/bin/bash
+su minecraft
+
+#screen -dmS mcshell
+#screen -S new_screen -X stuff "/usr/local/
+#"
+
+
