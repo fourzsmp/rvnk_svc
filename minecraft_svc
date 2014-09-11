@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version fourz_0.5.2 2014-08-31 (YYYY-MM-DD)
+# version fourz_0.5.3 2014-09-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -24,7 +24,6 @@ source $LOCALPATH/settings.service.cfg
 source $LOCALPATH/settings.global.cfg
 
 BACKUPPATH="$MCHOME/backups"
-SYNCPATH="$BACKUPPATH/offline_sync"
 
 ME=`whoami`
 as_user() {
@@ -243,11 +242,12 @@ mc_update() {
 }
 
 mc_backup() {
-  NOW=`date "+%y%m%d-%H%M"`
-    
+  NOW=`date "+%y%m%d-%H%M"`    
   command=$1
   type=$2
   option=$3  
+  SYNCPATH="$BACKUPPATH/offline_sync"
+  
   echo "$command/$type/$option"
   
   if [ -z "$type" ]; then type="quick"; fi
@@ -264,7 +264,7 @@ mc_backup() {
         mc_command save-all
         mc_command save-off
         #rsync -vr "$MCPATH/$option/" "$SYNCPATH/$option"
-        cp "$MCPATH/$option/" "$SYNCPATH/" -rf >> /home/minecraft/backup.log
+        cp "$MCPATH/$option/" "$SYNCPATH/" -rf >> "$MCHOME"/backup.log
         mc_command "backup complete!"
         mc_command save-on
       else
@@ -298,7 +298,7 @@ mc_backup() {
       mc_command save-all
       mc_command save-off
       cp "$MCPATH/plugins/" "$SYNCPATH/" -rf >> /home/minecraft/backup.log
-      /usr/local/bin/mcx save-on
+      mc_command save-on
       ;;
     inventories)
       echo "backing up server plugins"
@@ -309,16 +309,18 @@ mc_backup() {
       mc_command save-on
       ;;
     sync)
+      source $LOCALPATH/settings.remotesync.cfg
+      
       if [ -z "$option" ]; then 
-        echo "syncronizing $SYNCPATH to dev.fourz.org"
-        echo "$SYNCPATH/ wizard@dev.fourz.org:$SYNCPATH"
-        rsync -rza --delete "$SYNCPATH/" wizard@dev.fourz.org:"$SYNCPATH"
+        echo "syncronizing $SYNCPATH to $SYNCHOST"
+        echo "$SYNCPATH/ ${SYNCUSER}@${SYNCHOST}:$SYNCPATH"
+        rsync -rza --delete "$SYNCPATH/" "${SYNCUSER}@${SYNCHOST}:$SYNCPATH/"
       else
         if [ -d "$SYNCPATH/$option" ]; then
           echo "syncronizing $SYNCPATH/$option to dev.fourz.org"
-          rsync -rza --delete "$SYNCPATH/$option" wizard@dev.fourz.org:"$SYNCPATH/$option"
+          rsync -rza --delete "$SYNCPATH/$option" "${SYNCUSER}@${SYNCHOST}:$SYNCPATH/$option"          
         fi
-      fi    
+      fi  
       ;;
     
     *) 
