@@ -14,36 +14,25 @@
 # Description:    Starts the minecraft server
 ### END INIT INFO
 
-#Settings
-#SERVICE="$2"
-OPTIONS='nogui'
-USERNAME='minecraft'
-WORLD='zothique'
-MAXHEAP=4096
-MINHEAP=4096
-HISTORY=1024
-CPU_COUNT=2
+#Settings:
 
-MCPATH='/var/mcsnapshot/'
-MCHOME='/home/minecraft'
-BACKUPPATH='/home/minecraft/backups'
-REPOSITORY="/home/minecraft/instances"
-SYNCPATH="/home/minecraft/backups/offline_sync"
-SCRIPTS="/usr/local/bin"
+#service executable needs to be symlinked to /etc/init.d/minecraft and housed with rest of scripts.
+#LOCALPATH follows that symlink to the find the rest of the scripts.
 
-declare -a WORLDS=(zothique zothique_nether zothique_the_end)
+LOCALPATH=$(dirname $(readlink -f $0))
+source $LOCALPATH/settings.service.cfg
+source $LOCALPATH/settings.global.cfg
 
-SERVICE="latest.jar"
-
-INVOCATION="java -Xmx${MAXHEAP}M -Xms${MINHEAP}M -XX:+UseConcMarkSweepGC \
--XX:+UseParNewGC -XX:+DisableExplicitGC -jar $SERVICE $OPTIONS"
+BACKUPPATH="$MCHOME/backups"
+SYNCPATH="$BACKUPPATH/offline_sync"
 
 ME=`whoami`
 as_user() {
   if [ $ME == $USERNAME ] ; then
     bash -c "$1"
   else
-    sudo "$SCRIPTS/"mcrunas "$1"
+    #requires user running the script to have NOPASSWD option set in sudoers for $LOCALPATH/mcrunas.
+    sudo $LOCALPATH/mcrunas "$1"  
   fi
 }
 
@@ -108,7 +97,7 @@ mc_saveon() {
 }
 
 mc_stop() {
-  mc_port disable
+  $LOCALPATH/mc_port disable
   if pgrep -u $USERNAME -f $SERVICE > /dev/null
   then
     if [ "$1" = "force" ]; then
@@ -142,7 +131,7 @@ mc_stop() {
   else
     echo "$SERVICE is stopped."
   fi
-  mc_port enable
+  $LOCALPATH/mc_port enable
 }
 
 mc_regenerate() {
@@ -271,13 +260,13 @@ mc_backup() {
       fi
       if [ -d "$MCPATH/$option" ]; then
         echo "backing up world: $option"
-        /usr/local/bin/mcx "say [AUTO] backing up world: $option"
-        /usr/local/bin/mcx save-all
-        /usr/local/bin/mcx save-off
+        mc_command "say [AUTO] backing up world: $option"
+        mc_command save-all
+        mc_command save-off
         #rsync -vr "$MCPATH/$option/" "$SYNCPATH/$option"
         cp "$MCPATH/$option/" "$SYNCPATH/" -rf >> /home/minecraft/backup.log
-        /usr/local/bin/mcx "backup complete!"
-        /usr/local/bin/mcx save-on
+        mc_command "backup complete!"
+        mc_command save-on
       else
         echo "World, $option does not exist"
       fi
@@ -291,32 +280,33 @@ mc_backup() {
       echo $BACKUP_FILE
       if [ -d "$BACKUPPATH" ]; then
         echo "backing up all server files"
-        /usr/local/bin/mcx "say [AUTO] backing up all server files"
-        /usr/local/bin/mcx save-all
-        /usr/local/bin/mcx save-off        
+        mc_command "say [AUTO] backing up all server files"
+        mc_command save-all
+        mc_command save-off        
         #result=$(touch $BACKUP_FILE )
-        nice zip -rq9 $BACKUP_FILE $MCPATH
-        /usr/local/bin/mcx "backup complete!"
-        /usr/local/bin/mcx save-on
+        cmd="nice zip -rq9 $BACKUP_FILE $MCPATH"
+        sudo $LOCALPATH/mcrunas "$cmd" 
+        mc_command "say backup complete!"
+        mc_command save-on
       else
         echo "$BACKUPPATH does not exist"
       fi      
       ;;
     plugins)
       echo "backing up server plugins"
-      /usr/local/bin/mcx "say [AUTO] backing up server plugins"
-      /usr/local/bin/mcx save-all
-      /usr/local/bin/mcx save-off
+      mc_command "say [AUTO] backing up server plugins"
+      mc_command save-all
+      mc_command save-off
       cp "$MCPATH/plugins/" "$SYNCPATH/" -rf >> /home/minecraft/backup.log
       /usr/local/bin/mcx save-on
       ;;
     inventories)
       echo "backing up server plugins"
-      /usr/local/bin/mcx "say [AUTO] backing up player inventories"
-      /usr/local/bin/mcx save-all
-      /usr/local/bin/mcx save-off
+      mc_command "say [AUTO] backing up player inventories"
+      mc_command save-all
+      mc_command save-off
       cp "$MCPATH/world/players/" "$SYNCPATH/world/" -rf >> /home/minecraft/backup.log
-      /usr/local/bin/mcx save-on
+      mc_command save-on
       ;;
     sync)
       if [ -z "$option" ]; then 
@@ -529,7 +519,7 @@ case "$1" in
     fi
     ;;
   *)
-    echo "Usage: $0 {start|stop|update|backup|status|restart|forcerestart|command|kickall \"server command\"}"
+    echo "Usage: $0 {start|stop|update|backup|status|restart|forcerestart|kickall|command \"server command\"}"    
   exit 1
   ;;
 esac
