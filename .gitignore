@@ -3,4 +3,5 @@ barter-sync
 dynmap-sync
 settings.remotesync.cfg
 advdata/adv.*
+output
 !advdata/adv.text.example
