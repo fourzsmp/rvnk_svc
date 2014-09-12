@@ -1,8 +1,9 @@
 #!/bin/bash
-mcx "whitelist add $1"
+LOCALPATH=$(dirname $0)
+$LOCALPATH/mcx "whitelist add $1"
 if [ -z "$2" ]; then
-  mcx "pex user $1 group set resident"
-  fay ca "$1 has been promoted to resident!" gold
+  $LOCALPATH/mcx "pex user $1 group set resident"
+  $LOCALPATH/fay ca "$1 has been promoted to resident!" gold
 else
   if [[ "$2" = "resident" ||
         "$2" = "member" ||
@@ -17,8 +18,8 @@ else
         "$2" = "grunt" ||
         "$2" = "knight" ||
         "$2" = "warlord" ]]; then
-    mcx "pex user $1 group set $2"    
-    fay ca "$1 has been promoted to $2!" gold
+    $LOCALPATH/mcx "pex user $1 group set $2"    
+    $LOCALPATH/fay ca "$1 has been promoted to $2!" gold
   else 
     echo "rank $2 not recognized"
   fi

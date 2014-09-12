@@ -1,8 +1,9 @@
 #!/bin/bash
 
-DATPATH="$(dirname $0)/advdata"
-cd "$DATPATH"
+LOCALPATH=$(dirname $0)
+DATPATH="$LOCALPATH/advdata"
 
+cd "$DATPATH"
 get_ads() {
     OLDIFS=$IFS
     IFS=$'\r\n' 
@@ -24,8 +25,7 @@ case "$1" in
   announce)
     get_ads    
     CURRENT=$(cat $DATPATH/adv.last)
-
-    #say "[AD] ${adv[$CURRENT]}"    
+    
     re='\[url='
     if [[ "${adv[$CURRENT]}" =~ $re ]]; then
       ../fay uabb "[AD] ${adv[$CURRENT]}"

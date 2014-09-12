@@ -21,7 +21,6 @@
 
 LOCALPATH=$(dirname $(readlink -f $0))
 source $LOCALPATH/settings.service.cfg
-source $LOCALPATH/settings.global.cfg
 
 BACKUPPATH="$MCHOME/backups"
 

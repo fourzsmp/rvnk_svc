@@ -1,5 +1,5 @@
 #!/bin/bash
-# /usr/local/bin/fay
+
 case $1 in
   a)    
     cmd="tellraw @a '$2'"    
@@ -37,7 +37,6 @@ case $1 in
     exit 1
     
 esac
-#echo "$cmd"
-/etc/init.d/minecraft command $cmd
 
+$(dirname $0)/minecraft_svc command "$cmd"
 exit 0

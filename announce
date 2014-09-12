@@ -4,5 +4,5 @@ for i in "$@"; do
   #i={i//"/\"}
   all="$all$i "
 done
-/etc/init.d/minecraft command "broadcast $all"
+$(dirname $0)/minecraft_svc command "broadcast $all"
 twidge update "$all"

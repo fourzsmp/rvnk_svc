@@ -1,2 +1,3 @@
-#! /bin/sh
-tail -F -n 80 /var/mcsnapshot/logs/latest.log | sed -e 's/Server thread\///'
+#! /bin/bash
+source $(dirname $0)/settings.service.cfg
+tail -F -n 80 "$MCPATH/logs/latest.log" | sed -e 's/Server thread\///'

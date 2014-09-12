@@ -1,1 +1,1 @@
-/etc/init.d/minecraft "$@"
+$(dirname $0)/minecraft_svc "$@"

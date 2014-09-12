@@ -5,7 +5,7 @@ case "$#" in
     for i in "$@"; do
     all="$all$i "
     done
-    /etc/init.d/minecraft command "say $all"
+    $(dirname $0)/minecraft_svc command "say $all"
     exit 1
     ;;
   2)  #pm or flags depending on usage of -flags
@@ -26,14 +26,14 @@ case "$#" in
     else
       MSG="$2"
       ME=`whoami`
-      CMD="tellraw $1 [{'text':'$ME@console tells you: $2',color:'gray',italics:true}]"
-      /etc/init.d/minecraft command "$CMD"
+      cmd="tellraw $1 [{'text':'$ME@console tells you: $2',color:'gray',italics:true}]"
+      $(dirname $0)/minecraft_svc command "$cmd"
       exit 1    
     fi
     
     ME=`whoami`
-    CMD="tellraw @a {'text':'','extra':[{'text':'['},{'text':'$ME@console','color':'green'},{'text':'] $all'}]}"
-    /etc/init.d/minecraft command "$CMD"
+    cmd="tellraw @a {'text':'','extra':[{'text':'['},{'text':'$ME@console','color':'green'},{'text':'] $all'}]}"
+    $(dirname $0)/minecraft_svc command "$cmd"
     exit 1    
     ;;
   3)  #unsure
