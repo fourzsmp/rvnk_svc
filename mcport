@@ -1,27 +1,100 @@
 #!/bin/bash
 
-#This script assumes that these rules are in this place within iptables.  its a dangerous script.
+# In order for scripts to use this as part of minecraft_svc+ the minecraft user must be allowed to run via sudo without a password in your sudoers file.
+# Will work on other port numbers but it enables the ports on both tcp and udp.  
+# Ports 21, 22, 222, 80 and 3306 are blacklisted
 
+# This script assumes that your firewall rules for minecraft are in the input chain in this simple format:
 # 6. ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:25565 state NEW
 # 7. ACCEPT     udp  --  anywhere             anywhere             udp dpt:25565 state NEW
-# 8. ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:25556 state NEW
-# 9. ACCEPT     udp  --  anywhere             anywhere             udp dpt:25556 state NEW
 
-case "$1" in
+function findFlip {
+
+  #no longer used in this script /remove
+  #finds mirror item in set where is in format: 'set1item1:set1item2 set2item1:set2item2"
+  #findflip usage:
+  #set variable:SWAPMAP e.g.: SWAPMAP="25565:53833 25556:53835"
+  #findFlip $num
+  #echo $(findFlip 25556)
+
+  din="$1"
+  for d1 in $SWAPMAP
+  do
+    set=$(echo $d1 | tr : " ")
+    read -a newset <<< "$set"
+    l=${newset[0]}
+    r=${newset[1]}
+    echo "[$l] [$r]"
+    if [[ "$din" -eq "$l" ]]; then
+      echo $r
+      break;
+    elif [[ "$din" -eq "$r" ]]; then
+      echo $l
+      break;
+    fi  
+  done  
+}
+
+function getMatchingRuleNums {
+  port=$1  
+  table=$(sudo iptables --list INPUT --line-numbers -n | tail -n+3 | grep "dpt:$port")
+  OLDIFS=$IFS
+  IFS=$'\n'
+  if [[ "$2" != "list" ]]; then
+    for line in $table
+    do
+      printf "$line" | cut -f 1 -d " "
+    done
+  else
+    echo "$table"
+  fi  
+  IFS=$OLDIFS
+}
+
+function listContains {
+  for word in $1; do
+    [[ $word = $2 ]] && return 0
+  done
+  return 1
+}
+
+action=$1
+port=$2
+
+blacklist="80 22 222 21 3306"
+if listContains "$blacklist" $2; then echo "modifications of port $port is forbidden within this script.";exit 1;fi
+
+case "$action" in
   enable)
-    iptables -R INPUT 6 -p tcp --dport 25565 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
-    iptables -R INPUT 7 -p udp --dport 25565 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
-    iptables -R INPUT 8 -p tcp --dport 25556 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
-    iptables -R INPUT 9 -p udp --dport 25556 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    rules=$(getMatchingRuleNums $port)
+    #echo "$rules"
+    if [[ -z $rules ]]; then
+      iptables -A INPUT -p tcp --dport $port -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+      iptables -A INPUT -p udp --dport $port -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    else
+      prettyrules=$(echo $rules)
+      echo "rule(s) already exist: [$prettyrules]  cannot re-add"
+      exit 1
+    fi
     ;;
   disable)
-    iptables -R INPUT 6 -p tcp --dport 53833 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
-    iptables -R INPUT 7 -p udp --dport 53834 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
-    iptables -R INPUT 8 -p tcp --dport 53835 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
-    iptables -R INPUT 9 -p udp --dport 53836 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    if [[ -z $port ]]; then
+      echo "Usage: $0 disable {port}"
+      exit 1
+    fi  
+    rules=$(getMatchingRuleNums $port)
+    rules=$(echo $rules | tac -s " ")       #reverse list (important!)
+    for rule in $rules
+    do      
+      echo "disabling rule $rule"
+      iptables -D INPUT $rule
+    done
+    ;;
+  list)
+    getMatchingRuleNums "$port" $1
     ;;
   *)
-    echo "Usage: $0 {enable|disable}"
+    echo "Usage: $0 {enable|disable|list} [port]"
     exit 1
     ;; 
 esac 

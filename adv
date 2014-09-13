@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#this script assumes adv.text uses CRLF EOL...i don't know why.
+
 LOCALPATH=$(dirname $0)
 DATPATH="$LOCALPATH/advdata"
 

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#This script assumes that these rules are in this place within iptables.  its a dangerous script.
+
+# 6. ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:25565 state NEW
+# 7. ACCEPT     udp  --  anywhere             anywhere             udp dpt:25565 state NEW
+# 8. ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:25556 state NEW
+# 9. ACCEPT     udp  --  anywhere             anywhere             udp dpt:25556 state NEW
+
+action=$1
+port=$2
+
+
+
+case "$action" in
+  enable)
+    iptables -R INPUT 6 -p tcp --dport 25565 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    iptables -R INPUT 7 -p udp --dport 25565 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    iptables -R INPUT 8 -p tcp --dport 25556 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    iptables -R INPUT 9 -p udp --dport 25556 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    ;;
+  disable)
+    iptables -R INPUT 6 -p tcp --dport 53833 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    iptables -R INPUT 7 -p udp --dport 53834 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    iptables -R INPUT 8 -p tcp --dport 53835 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    iptables -R INPUT 9 -p udp --dport 53836 -m state --state NEW -s 0.0.0.0/0 -j ACCEPT
+    ;;
+  *)
+    echo "Usage: $0 {enable|disable}"
+    exit 1
+    ;; 
+esac 
+  exit 0

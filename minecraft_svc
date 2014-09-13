@@ -95,7 +95,7 @@ mc_saveon() {
 }
 
 mc_stop() {
-  $LOCALPATH/mc_port disable
+  $LOCALPATH/mcport disable $SVCPORT
   if pgrep -u $USERNAME -f $SERVICE > /dev/null
   then
     if [ "$1" = "force" ]; then
@@ -129,7 +129,7 @@ mc_stop() {
   else
     echo "$SERVICE is stopped."
   fi
-  $LOCALPATH/mc_port enable
+  $LOCALPATH/mcport enable $SVCPORT
 }
 
 mc_regenerate() {
@@ -360,13 +360,13 @@ mc_test() {
 
 mc_restart() {
   mc_kickall "$1"
-  sleep 1
+  sleep .5
   mc_stop
   sleep 3
   mc_start
 }
 mc_port() {
-  sudo /usr/local/bin/mcport $1
+  sudo /usr/local/bin/mcport "$1" $SVCPORT
 }
 
 escape_stuff() {
